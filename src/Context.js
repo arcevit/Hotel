@@ -1,5 +1,6 @@
-import React, { Component } from "react";
-import items from "./data";
+import React, { Component } from 'react';
+// import items from './data'; we dont need any more because we are getting data from contentful not any more locally :)
+import Client from './Contentful';
 
 const RoomContext = React.createContext();
 
@@ -9,7 +10,7 @@ class RoomProvider extends Component {
     sortedRooms: [],
     featuredRooms: [],
     loading: true,
-    type: "all",
+    type: 'all',
     capacity: 1,
     price: 0,
     minPrice: 0,
@@ -20,8 +21,16 @@ class RoomProvider extends Component {
     pets: false
   };
 
-  componentDidMount() {
-    let rooms = this.formatData(items);
+  //getData
+
+  getData = async () => {
+    try {
+      let response= await Client.getEntries({
+        content_type:'sumanhotel',
+        // order:'sys.createdAt'  //it can be order price look 
+        order:'fields.price'
+      });
+    let rooms = this.formatData(response.items);
     let featuredRooms = rooms.filter(room => room.featured === true);
     let maxPrice = Math.max(...rooms.map(item => item.price));
     let maxSize = Math.max(...rooms.map(item => item.size));
@@ -34,6 +43,16 @@ class RoomProvider extends Component {
       maxPrice,
       maxSize
     });
+
+
+    } catch (error) {
+      console.log(error)
+    }
+  };
+
+  componentDidMount() {
+    this.getData()
+    
   }
 
   formatData(items) {
@@ -53,10 +72,11 @@ class RoomProvider extends Component {
     return theroom;
   };
   handleChange = event => {
-    const target = event.target;
-    const value = event.type === "checkbox" ? target.checked : target.value;
-    const name = target.name;
-    console.log('kim',name)
+    const value =
+      event.target.type === 'checkbox'
+        ? event.target.checked
+        : event.target.value;
+    const name = event.target.name;
     this.setState({ [name]: value }, this.filterRooms);
   };
 
@@ -72,15 +92,36 @@ class RoomProvider extends Component {
       pets
     } = this.state;
     let tempRooms = [...rooms];
-    capacity=parseInt(capacity)
-    if (type !== "all") {
+    //filter by capacity
+    capacity = parseInt(capacity);
+    if (type !== 'all') {
       tempRooms = tempRooms.filter(item => item.type === type);
     }
-    if(capacity!==1){
-      tempRooms=tempRooms.filter(room=>room.capacity>=capacity)
+    if (capacity !== 1) {
+      tempRooms = tempRooms.filter(room => room.capacity >= capacity);
     }
+    //filter by price
+    price = parseInt(price);
+    tempRooms = tempRooms.filter(room => room.price <= price);
+
+    //filter by size
+    tempRooms = tempRooms.filter(
+      room => room.size >= minSize && room.size <= maxSize
+    );
+
+    //filter by breakfast
+    if (breakfast) {
+      tempRooms = tempRooms.filter(room => room.breakfast === true);
+    }
+
+    //filter by pets
+
+    if (pets) {
+      tempRooms = tempRooms.filter(room => room.pets === true);
+    }
+
+    //set state
     this.setState({ sortedRooms: tempRooms });
-    console.log(tempRooms);
   };
   render() {
     return (

@@ -1,9 +1,8 @@
-import React from "react";
+import React,{ useContext } from "react";
 import RoomsFilter from "./RoomsFilter";
 import RoomsList from "./RoomsList";
 // import { RoomConsumer, RoomProvider, RoomContext } from "../Context";
 import { RoomContext } from "../Context";
-import { useContext } from "react";
 
 import Loading from "./Loading";
 
